@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ServiceType {
+  dine_in
+  delivery
+}
+
+enum PriceCurrency {
+  USD
+  QAR
+}
+
+/// Google-authenticated account — only sign-in method in MVP.
+model User {
+  id        String   @id @default(cuid())
+  googleId  String   @unique
+  email     String   @unique
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  reviews   Review[]
+}
+
+/// Restaurant visit review — owned by a user.
+model Review {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  excerpt     String
+  body        String
+  placeName   String
+  serviceType ServiceType
+  partySize   Int?
+  meals       Json
+  nutrition   Json?
+  currency    PriceCurrency
+  totalAmount Float?
+  rating      Int
+  cuisineTags String[]
+  foodTypeTags String[]    @default([])
+  imageUrls   String[]
+  likeCount   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+}
