@@ -23,13 +23,23 @@ docker run -d --name foodblog-db -p 5432:5432 \
 ```bash
 cd food-blog-server
 npm install
-cp .env.example .env
 ```
 
-Edit `.env`:
+Create a local `.env` file (not committed to Git):
 
-- Set `GOOGLE_CLIENT_ID` (same Web client ID as the Angular app)
-- Set `JWT_SECRET` to a long random string
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/foodblog
+GOOGLE_CLIENT_ID=your-google-web-client-id
+JWT_SECRET=your-long-random-secret
+CORS_ORIGIN=http://localhost:4200
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+CLOUDINARY_UPLOAD_FOLDER=food-blog/reviews
+PORT=3000
+```
+
+See [SERVER.md](./SERVER.md) for variable descriptions.
 
 ### 3. Database
 
