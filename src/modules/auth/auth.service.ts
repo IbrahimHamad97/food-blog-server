@@ -45,9 +45,9 @@ export async function loginWithGoogle(env: Env, idToken: string): Promise<AuthRe
       name: profile.name,
       avatarUrl: profile.avatarUrl,
     },
+    // Keep custom display name — only refresh email/avatar from Google.
     update: {
       email: profile.email,
-      name: profile.name,
       avatarUrl: profile.avatarUrl,
     },
   });
@@ -61,4 +61,21 @@ export async function loginWithGoogle(env: Env, idToken: string): Promise<AuthRe
 export async function getUserById(userId: string): Promise<AuthUserDto | null> {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   return user ? toDto(user) : null;
+}
+
+/** Update the public display name shown on reviews and the profile. */
+export async function updateDisplayName(
+  userId: string,
+  name: string,
+): Promise<AuthUserDto | null> {
+  const existing = await prisma.user.findUnique({ where: { id: userId } });
+  if (!existing) {
+    return null;
+  }
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { name },
+  });
+  return toDto(user);
 }
