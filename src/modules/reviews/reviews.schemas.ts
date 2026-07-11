@@ -2,6 +2,7 @@
  * Zod schemas for review create/update payloads — aligned with client CreateReviewInput.
  */
 import { z } from 'zod';
+import { BLOCKED_LANGUAGE_MESSAGE, findBlockedTerm } from '../../lib/content-filter.js';
 
 const MAX_MEALS = 10;
 const MAX_IMAGES = 5;
@@ -30,7 +31,7 @@ export const nutritionSchema = z
   .nullable()
   .optional();
 
-export const createReviewBodySchema = z.object({
+const reviewFieldsSchema = z.object({
   title: z.string().trim().min(1, 'Title is required'),
   body: z.string().trim().min(1, 'Review text is required'),
   placeName: z.string().trim().min(1, 'Restaurant name is required'),
@@ -48,10 +49,60 @@ export const createReviewBodySchema = z.object({
     .default([]),
 });
 
+type ReviewFields = z.infer<typeof reviewFieldsSchema>;
+
+/** Collect every user-written string that should be moderated. */
+function reviewTextSnippets(
+  data: ReviewFields,
+): Array<{ path: (string | number)[]; value: string }> {
+  const snippets: Array<{ path: (string | number)[]; value: string }> = [
+    { path: ['title'], value: data.title },
+    { path: ['body'], value: data.body },
+    { path: ['placeName'], value: data.placeName },
+  ];
+
+  data.cuisineTags.forEach((tag, i) => {
+    snippets.push({ path: ['cuisineTags', i], value: tag });
+  });
+  data.foodTypeTags.forEach((tag, i) => {
+    snippets.push({ path: ['foodTypeTags', i], value: tag });
+  });
+  data.meals.forEach((meal, i) => {
+    snippets.push({ path: ['meals', i, 'name'], value: meal.name });
+    if (meal.notes) {
+      snippets.push({ path: ['meals', i, 'notes'], value: meal.notes });
+    }
+  });
+
+  if (data.nutrition?.allergens) {
+    snippets.push({ path: ['nutrition', 'allergens'], value: data.nutrition.allergens });
+  }
+  if (data.nutrition?.notes) {
+    snippets.push({ path: ['nutrition', 'notes'], value: data.nutrition.notes });
+  }
+
+  return snippets;
+}
+
+function rejectBlockedLanguage(data: ReviewFields, ctx: z.RefinementCtx): void {
+  for (const snippet of reviewTextSnippets(data)) {
+    if (findBlockedTerm(snippet.value)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: BLOCKED_LANGUAGE_MESSAGE,
+        path: snippet.path,
+      });
+      return;
+    }
+  }
+}
+
+export const createReviewBodySchema = reviewFieldsSchema.superRefine(rejectBlockedLanguage);
+
 export type CreateReviewBody = z.infer<typeof createReviewBodySchema>;
 
 /** Same shape as create — used for PATCH /api/reviews/:id */
-export const updateReviewBodySchema = createReviewBodySchema;
+export const updateReviewBodySchema = reviewFieldsSchema.superRefine(rejectBlockedLanguage);
 export type UpdateReviewBody = CreateReviewBody;
 
 export const listReviewsQuerySchema = z.object({
