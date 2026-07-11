@@ -5,6 +5,7 @@ import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { loadEnv } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
@@ -15,6 +16,9 @@ import { prisma } from './lib/prisma.js';
 const env = loadEnv();
 const app = express();
 
+// Trust the hosting platform's reverse proxy so rate limiting and IPs are correct.
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(
   cors({
@@ -22,7 +26,25 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+
+// Generous global limit to deter abuse without affecting normal use.
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+});
+
+// Stricter limit on auth to slow down token-exchange abuse.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+});
+
+app.use('/api', apiLimiter);
 
 /** GET /api/health — smoke test for deploy and local dev */
 app.get('/api/health', async (_req, res) => {
@@ -34,7 +56,7 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
-app.use('/api/auth', createAuthRouter(env));
+app.use('/api/auth', authLimiter, createAuthRouter(env));
 app.use('/api/reviews', createReviewsRouter(env));
 app.use('/api/uploads', createUploadsRouter(env));
 

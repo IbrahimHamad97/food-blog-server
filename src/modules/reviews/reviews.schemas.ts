@@ -65,5 +65,8 @@ export const listMyReviewsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(12),
 });
 
+export const listMyLikedReviewsQuerySchema = listMyReviewsQuerySchema;
+
 export type ListReviewsQuery = z.infer<typeof listReviewsQuerySchema>;
 export type ListMyReviewsQuery = z.infer<typeof listMyReviewsQuerySchema>;
+export type ListMyLikedReviewsQuery = z.infer<typeof listMyLikedReviewsQuerySchema>;

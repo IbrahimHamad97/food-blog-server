@@ -19,13 +19,15 @@ enum PriceCurrency {
 
 /// Google-authenticated account — only sign-in method in MVP.
 model User {
-  id        String   @id @default(cuid())
-  googleId  String   @unique
-  email     String   @unique
+  id        String       @id @default(cuid())
+  googleId  String       @unique
+  email     String       @unique
   name      String
   avatarUrl String?
-  createdAt DateTime @default(now())
+  createdAt DateTime     @default(now())
   reviews   Review[]
+  likes     ReviewLike[]
+  bookmarks ReviewBookmark[]
 }
 
 /// Restaurant visit review — owned by a user.
@@ -50,7 +52,33 @@ model Review {
   likeCount   Int           @default(0)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  likes       ReviewLike[]
+  bookmarks   ReviewBookmark[]
 
   @@index([userId])
   @@index([createdAt(sort: Desc)])
+}
+
+/// A single user's like on a review — one row per (user, review).
+model ReviewLike {
+  userId    String
+  reviewId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, reviewId])
+  @@index([reviewId])
+}
+
+/// A user's saved/bookmarked review — one row per (user, review).
+model ReviewBookmark {
+  userId    String
+  reviewId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, reviewId])
+  @@index([reviewId])
 }

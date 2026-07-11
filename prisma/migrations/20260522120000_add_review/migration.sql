@@ -5,6 +5,18 @@ CREATE TYPE "ServiceType" AS ENUM ('dine_in', 'delivery');
 CREATE TYPE "PriceCurrency" AS ENUM ('USD', 'QAR');
 
 -- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "googleId" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "avatarUrl" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Review" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -20,6 +32,7 @@ CREATE TABLE "Review" (
     "totalAmount" DOUBLE PRECISION,
     "rating" INTEGER NOT NULL,
     "cuisineTags" TEXT[],
+    "foodTypeTags" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "imageUrls" TEXT[],
     "likeCount" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -27,6 +40,12 @@ CREATE TABLE "Review" (
 
     CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_googleId_key" ON "User"("googleId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE INDEX "Review_userId_idx" ON "Review"("userId");

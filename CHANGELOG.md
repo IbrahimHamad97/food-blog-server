@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### 2026-06-14 — Phase 1 hardening + persistent likes
+
+- `ReviewLike` model + migration; `POST`/`DELETE /api/reviews/:id/like` keep `likeCount` in sync transactionally.
+- Public read endpoints use optional auth to return `likedByMe`.
+- `foodTypeTags` now persisted/read as a real column (removed merge hack + `as any`).
+- Fixed baseline migration (missing `User` table + `foodTypeTags`); added `migration_lock.toml`.
+- Session JWTs now expire (30d). Added rate limiting (`express-rate-limit`) + `trust proxy` + 1mb body limit.
+- `build` runs `prisma generate`; added `db:deploy` / `release` (`prisma migrate deploy`).
+
+### 2026-05-28 — Review update and delete
+
+- `PATCH /api/reviews/:id` and `DELETE /api/reviews/:id` — JWT owner only.
+- Removed `.env.example` from repo; `.env*` gitignored; env template in README.
+
 ### 2026-05-26 — Cloudinary photo uploads
 
 - `POST /api/uploads/sign` — JWT; returns signed upload params for direct browser upload.

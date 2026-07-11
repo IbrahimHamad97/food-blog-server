@@ -35,7 +35,8 @@ food-blog-server/
 │   ├── middleware/           # auth, errors
 │   └── modules/
 │       ├── auth/             # Google sign-in routes
-│       └── reviews/          # Review create (POST)
+│       ├── reviews/          # List, create, get, update, delete
+│       └── uploads/          # Cloudinary sign
 ├── prisma/schema.prisma
 ├── SERVER.md                 # This file
 ├── README.md
@@ -53,7 +54,7 @@ Status: `[ ]` planned · `[~]` in progress · `[x]` done
 | 3 | `POST /api/auth/google` | [x] |
 | 4 | `GET /api/auth/me` | [x] |
 | 5 | `POST /api/auth/logout` | [x] |
-| 6 | Reviews CRUD | [~] list, me, create, GET, PATCH, DELETE by id |
+| 6 | Reviews API | [x] list, me, create, GET, PATCH, DELETE by id |
 | 7 | Cloudinary photo uploads | [x] signed direct upload from client |
 | 8 | Collections CRUD | [ ] |
 
@@ -83,12 +84,14 @@ Base URL: `http://localhost:3000/api` (dev).
 | POST | `/reviews` | Bearer JWT | Body: create review → `{ review }` (201) |
 | PATCH | `/reviews/:id` | Bearer JWT (owner) | Body: same as create → `{ review }` |
 | DELETE | `/reviews/:id` | Bearer JWT (owner) | `{ ok: true }` |
+| POST | `/reviews/:id/like` | Bearer JWT | `{ likeCount, likedByMe }` (idempotent) |
+| DELETE | `/reviews/:id/like` | Bearer JWT | `{ likeCount, likedByMe }` (idempotent) |
 | POST | `/uploads/sign` | Bearer JWT | `{ cloudName, apiKey, timestamp, signature, folder }` |
 
 ### Photo uploads (Cloudinary)
 
 1. Client `POST /api/uploads/sign` (JWT) → short-lived signature.
-2. Client `POST https://api.cloudinary.com/v1_1/{cloudName}/image/upload` with `file`, `api_key`, `timestamp`, `signature`, `folder`, `max_file_size`.
+2. Client `POST https://api.cloudinary.com/v1_1/{cloudName}/image/upload` with `file`, `api_key`, `timestamp`, `signature`, `folder` (must match signed params).
 3. Cloudinary returns `secure_url`; client sends that URL in `imageUrls` when creating a review.
 
 Secrets (`CLOUDINARY_API_SECRET`) never leave the server. Folder default: `food-blog/reviews`.
@@ -135,6 +138,7 @@ Response `{ review }` matches client `Review` DTO (`publishedAt` = `createdAt`, 
 
 - **User** — `id`, `googleId`, `email`, `name`, `avatarUrl`, `createdAt`
 - **Review** — `userId`, `title`, `excerpt`, `body`, `placeName`, `serviceType` (`dine_in` | `delivery`), `partySize`, `meals` (JSON), `nutrition` (JSON), `currency` (`USD` | `QAR`), `totalAmount`, `rating`, `cuisineTags[]`, `foodTypeTags[]`, `imageUrls[]`, `likeCount`, `createdAt`, `updatedAt`
+- **ReviewLike** — composite PK (`userId`, `reviewId`); one row per like. `likeCount` on `Review` is kept in sync transactionally. Public read endpoints accept optional auth to set `likedByMe`.
 - **Collection** — planned; see client PROJECT.md
 
 ## Environment
@@ -168,6 +172,8 @@ Same spirit as the Angular client:
 | 2026-05-24 | Google-only auth | No password storage or reset flows |
 | 2026-05-24 | Stateless logout | Client deletes JWT; no server session store yet |
 | 2026-05-22 | Review create via POST | JWT owner; Zod validation; server computes totalAmount |
+| 2026-05-28 | PATCH/DELETE reviews | Owner-only; same body schema as create |
+| 2026-05-28 | No `.env` in repo | Secrets in host env only; template in README |
 
 ## Out of scope (for now)
 
