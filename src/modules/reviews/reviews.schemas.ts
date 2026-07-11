@@ -44,8 +44,8 @@ export const createReviewBodySchema = z.object({
   foodTypeTags: z.array(z.string().trim().min(1)).max(MAX_TAGS).default([]),
   imageUrls: z
     .array(z.string().trim().url('Each photo must be a valid URL'))
-    .min(1, 'At least one photo is required')
-    .max(MAX_IMAGES),
+    .max(MAX_IMAGES)
+    .default([]),
 });
 
 export type CreateReviewBody = z.infer<typeof createReviewBodySchema>;
