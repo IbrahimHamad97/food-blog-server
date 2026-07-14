@@ -37,7 +37,7 @@ export function createReviewsRouter(env: Env): Router {
     try {
       const { userId } = (req as AuthenticatedRequest).auth!;
       const query = listMyReviewsQuerySchema.parse(req.query);
-      const result = await listReviewsByUser(userId, query);
+      const result = await listReviewsByUser(userId, query, userId);
       res.json(result);
     } catch (err) {
       next(err);

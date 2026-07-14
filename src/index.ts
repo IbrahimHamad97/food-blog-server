@@ -11,6 +11,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
 import { createReviewsRouter } from './modules/reviews/reviews.routes.js';
 import { createUploadsRouter } from './modules/uploads/uploads.routes.js';
+import { createUsersRouter } from './modules/users/users.routes.js';
 import { prisma } from './lib/prisma.js';
 
 const env = loadEnv();
@@ -58,6 +59,7 @@ app.get('/api/health', async (_req, res) => {
 
 app.use('/api/auth', authLimiter, createAuthRouter(env));
 app.use('/api/reviews', createReviewsRouter(env));
+app.use('/api/users', createUsersRouter(env));
 app.use('/api/uploads', createUploadsRouter(env));
 
 app.use(errorHandler);

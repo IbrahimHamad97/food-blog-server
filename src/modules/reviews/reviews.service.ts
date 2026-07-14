@@ -370,15 +370,20 @@ export async function deleteReview(
   return 'ok';
 }
 
-/** Reviews authored by the signed-in user. */
+/**
+ * Reviews authored by a user.
+ * @param authorId — profile whose reviews to list
+ * @param viewerId — signed-in viewer for likedByMe/bookmarkedByMe (optional)
+ */
 export async function listReviewsByUser(
-  userId: string,
+  authorId: string,
   query: { page: number; limit: number },
+  viewerId?: string | null,
 ): Promise<ReviewListResult> {
   const page = query.page;
   const limit = query.limit;
   const skip = (page - 1) * limit;
-  const where = { userId };
+  const where = { userId: authorId };
 
   const [rows, total] = await Promise.all([
     prisma.review.findMany({
@@ -392,7 +397,7 @@ export async function listReviewsByUser(
   ]);
 
   const engagement = await fetchViewerEngagement(
-    userId,
+    viewerId ?? undefined,
     rows.map((row) => row.id),
   );
 
